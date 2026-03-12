@@ -28,22 +28,42 @@ architecture Behavioral of top is
     
     signal count: std_logic_vector(15 downto 0);
     
-    signal count_en: std_logic:='0';
+    signal count_up: std_logic:='0';
+    signal count_down: std_logic:='0';
+    signal reset: std_logic:='0';
 
     begin
     
         monopulse: MPG port map(clk => clk, btn => btn(4 downto 0), enable=>mpg_out);
         
-        count_en <= mpg_out(0);  
+        count_up <= mpg_out(1);  
+        count_down <= mpg_out(4);
+        reset <= mpg_out(0);
 
-        process(clk, count_en)
+        process(clk)
         begin
             if rising_edge(clk) then
-                if count_en = '1' then
+                if count_up = '1' then
                     count <= count + 1;
+                end if;
+                if count_down = '1' then
+                    count <= count - 1;
+                end if;
+                if reset = '1' then
+                    count <= (others => '0');
                 end if;
             end if;
         end process;
+        
+--        process(clk, count_down)
+--        begin
+--            if rising_edge(clk) then
+--                if count_down = '1' then
+--                    count <= count - 1;
+--                end if;
+--            end if;
+--        end process;
+        
           
         led <= count;
         
