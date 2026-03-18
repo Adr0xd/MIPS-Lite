@@ -40,12 +40,16 @@ architecture Behavioral of top is
     signal count_up: std_logic:='0';
     signal count_down: std_logic:='0';
     signal reset: std_logic:='0';
+    
+    signal digits_from_counter: std_logic_vector(31 downto 0):= (others => '0');
 
     begin
     
         monopulse: MPG port map(clk => clk, btn => btn(4 downto 0), enable=>mpg_out);
         
-        seven_seg: SSD port map(clk => clk,digits => x"1234_5678" ,cat => cat, an => an);
+        digits_from_counter <= x"0000" & count;
+        
+        seven_seg: SSD port map(clk => clk,digits => digits_from_counter ,cat => cat, an => an);
         
         count_up <= mpg_out(1);  
         count_down <= mpg_out(4);
