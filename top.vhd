@@ -24,6 +24,15 @@ architecture Behavioral of top is
         );
     end component MPG;
     
+    component ssd is
+      port (
+        clk    : in  std_logic;
+        digits : in  std_logic_vector(31 downto 0);   
+        an     : out std_logic_vector(7  downto 0);
+        cat    : out std_logic_vector(6  downto 0)
+      );
+    end component ssd;
+    
     signal mpg_out: std_logic_vector(4 downto 0);
     
     signal count: std_logic_vector(15 downto 0);
@@ -36,11 +45,13 @@ architecture Behavioral of top is
     
         monopulse: MPG port map(clk => clk, btn => btn(4 downto 0), enable=>mpg_out);
         
+        seven_seg: SSD port map(clk => clk,digits => x"1234_5678" ,cat => cat, an => an);
+        
         count_up <= mpg_out(1);  
         count_down <= mpg_out(4);
         reset <= mpg_out(0);
 
-        process(clk)
+        process(clk) -- up down reset counter
         begin
             if rising_edge(clk) then
                 if count_up = '1' then
@@ -53,17 +64,7 @@ architecture Behavioral of top is
                     count <= (others => '0');
                 end if;
             end if;
-        end process;
-        
---        process(clk, count_down)
---        begin
---            if rising_edge(clk) then
---                if count_down = '1' then
---                    count <= count - 1;
---                end if;
---            end if;
---        end process;
-        
+        end process;        
           
         led <= count;
         
