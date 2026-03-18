@@ -41,15 +41,20 @@ architecture Behavioral of top is
     signal count_down: std_logic:='0';
     signal reset: std_logic:='0';
     
-    signal digits_from_counter: std_logic_vector(31 downto 0):= (others => '0');
+    signal alu_output: std_logic_vector(31 downto 0):= (others => '0');
+    
+    signal switch_7to0_ext_B: std_logic_vector(31 downto 0);
+    signal switch_15to8_ext_A: std_logic_vector(31 downto 0);
+    signal switch_15to0_ext_shift: std_logic_vector(31 downto 0);
+    
 
     begin
     
         monopulse: MPG port map(clk => clk, btn => btn(4 downto 0), enable=>mpg_out);
         
-        digits_from_counter <= x"0000" & count;
+        seven_seg: SSD port map(clk => clk,digits => alu_output ,cat => cat, an => an);
         
-        seven_seg: SSD port map(clk => clk,digits => digits_from_counter ,cat => cat, an => an);
+        led(7) <= '1' when alu_output = 0 else '0'; -- the zero detector;
         
         count_up <= mpg_out(1);  
         count_down <= mpg_out(4);
@@ -68,8 +73,24 @@ architecture Behavioral of top is
                     count <= (others => '0');
                 end if;
             end if;
-        end process;        
+        end process;      
+        
+        switch_7to0_ext_B <= x"000000" & sw(7 downto 0);
+        switch_15to8_ext_A <= x"000000" & sw(15 downto 8);
+        switch_15to0_ext_shift <= x"0000" & sw(15 downto 0);
+        
+        process(count) -- ALU output mux
+        begin
+            case count(1 downto 0) is
+                when "00" => alu_output <= switch_15to8_ext_A + switch_7to0_ext_B; -- add a and b
+                when "01" => alu_output <= switch_15to8_ext_A - switch_7to0_ext_B; -- sub b from a
+                when "10" => alu_output <= switch_15to0_ext_shift(29 downto 0) & b"00"; -- shift left
+                when others => alu_output <=  b"00" & switch_15to0_ext_shift(31 downto 2); -- shift right
+            end case;
+        end process; 
           
-        led <= count;
+--        led <= count; -- no longer need this
+
+        led(1 downto 0) <= count(1 downto 0);
         
 end Behavioral;
