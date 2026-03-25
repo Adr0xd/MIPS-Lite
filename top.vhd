@@ -24,6 +24,19 @@ architecture Behavioral of top is
         );
     end component MPG;
     
+    component reg_file is
+        port (
+            clk : in std_logic;
+            ra1 : in std_logic_vector (3 downto 0);
+            ra2 : in std_logic_vector (3 downto 0);
+            wa : in std_logic_vector (3 downto 0);
+            wd : in std_logic_vector (31 downto 0);
+            wen : in std_logic;
+            rd1 : out std_logic_vector (31 downto 0);
+            rd2 : out std_logic_vector (31 downto 0)
+        );
+    end component reg_file;
+    
     component ssd is
       port (
         clk    : in  std_logic;
@@ -39,10 +52,15 @@ architecture Behavioral of top is
     
     signal count_up: std_logic:='0';
     signal count_down: std_logic:='0';
+    
+    signal write_enable: std_logic:='0';
+    
     signal reset: std_logic:='0';
     
     signal ssd_digits: std_logic_vector(31 downto 0):= (others => '0');
     
+    
+    -- ROM
     type t_rom is array (0 to 255) of std_logic_vector(15 downto 0);
     signal s_rom_in : t_rom := (
       x"0000",  -- 0
@@ -51,26 +69,38 @@ architecture Behavioral of top is
       x"1337",  -- 3
       others => (others => '1') -- always have others
     );
-    
-    signal rom_data_out: std_logic_vector(15 downto 0);
+    signal rom_data_out: std_logic_vector(15 downto 0); 
+    --- ROM DATA
    
+   signal s_rd1: std_logic_vector(31 downto 0);
+   signal s_rd2: std_logic_vector(31 downto 0);
     
 
     begin
     
         monopulse: MPG port map(clk => clk, btn => btn(4 downto 0), enable=>mpg_out);
         
-        ssd_digits <= x"0000" & rom_data_out;
         seven_seg: SSD port map(clk => clk,digits => ssd_digits ,cat => cat, an => an);
     
-        
+    
+        write_enable <= mpg_out(2);
+        register_file: reg_file port map(clk=>clk,
+                                        ra1 => count(3 downto 0),
+                                        ra2 => count(3 downto 0),
+                                        wa => count(3 downto 0),
+                                        wd => ssd_digits,
+                                        wen => write_enable,
+                                        rd1 => s_rd1,
+                                        rd2 => s_rd2);
+                                        
+        ssd_digits <= s_rd1 + s_rd2; -- sum_out
+                
         count_up <= mpg_out(1);  
         count_down <= mpg_out(4);
         reset <= mpg_out(0);
         
-        led <= x"00" & count(7 downto 0);-- zero extension on the counter
+--        led <= x"00" & count(7 downto 0);-- zero extension on the counter
         
-        rom_data_out <= s_rom_in(conv_integer(count(7 downto 0)));  
 
         process(clk) -- up down reset counter
         begin
@@ -87,8 +117,11 @@ architecture Behavioral of top is
             end if;
         end process;      
        
---        led <= count; -- no longer need this
 
-        led(1 downto 0) <= count(1 downto 0);
+        led <= x"000" & count(3 downto 0);
+        
+--        ssd_digits <= x"0000" & rom_data_out;
+--        rom_data_out <= s_rom_in(conv_integer(count(7 downto 0)));  
+
         
 end Behavioral;
