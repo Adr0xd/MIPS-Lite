@@ -1,138 +1,217 @@
-library IEEE;
-use IEEE.STD_LOGIC_1164.ALL;
-use IEEE.STD_LOGIC_ARITH.ALL;
-use IEEE.STD_LOGIC_UNSIGNED.ALL;
+LIBRARY IEEE;
+USE IEEE.STD_LOGIC_1164.ALL;
+USE IEEE.STD_LOGIC_ARITH.ALL;
+USE IEEE.STD_LOGIC_UNSIGNED.ALL;
 
-entity top is
-      port (
-        clk : in std_logic;
-        btn : in  std_logic_vector(4  downto 0);
-        sw  : in  std_logic_vector(15 downto 0);
-        led : out std_logic_vector(15 downto 0);
-        an  : out std_logic_vector(7  downto 0);
-        cat : out std_logic_vector(6  downto 0)
-     );
-end top;
+ENTITY top IS
+    PORT
+    (
+        clk : IN STD_LOGIC;
+        btn : IN STD_LOGIC_VECTOR(4 DOWNTO 0);
+        sw : IN STD_LOGIC_VECTOR(15 DOWNTO 0);
+        led : OUT STD_LOGIC_VECTOR(15 DOWNTO 0);
+        an : OUT STD_LOGIC_VECTOR(7 DOWNTO 0);
+        cat : OUT STD_LOGIC_VECTOR(6 DOWNTO 0)
+    );
+END top;
 
-architecture Behavioral of top is
+ARCHITECTURE Behavioral OF top IS
 
-    component MPG
-        Port(
-        clk : in std_logic;
-        btn : in std_logic_vector(4 downto 0);
-        enable  : out std_logic_vector(4 downto 0)
+    COMPONENT MPG
+        PORT
+        (
+            clk : IN STD_LOGIC;
+            btn : IN STD_LOGIC_VECTOR(4 DOWNTO 0);
+            enable : OUT STD_LOGIC_VECTOR(4 DOWNTO 0)
         );
-    end component MPG;
-    
-    component reg_file is
-        port (
-            clk : in std_logic;
-            ra1 : in std_logic_vector (3 downto 0);
-            ra2 : in std_logic_vector (3 downto 0);
-            wa : in std_logic_vector (3 downto 0);
-            wd : in std_logic_vector (31 downto 0);
-            wen : in std_logic;
-            rd1 : out std_logic_vector (31 downto 0);
-            rd2 : out std_logic_vector (31 downto 0)
-        );
-    end component reg_file;
-    
-    component rams_no_change is
-        port ( clk : in std_logic;
-            we : in std_logic;
-            en : in std_logic;
-            addr : in std_logic_vector(3 downto 0);
-            di : in std_logic_vector(31 downto 0);
-            do : out std_logic_vector(31 downto 0));
-    end component rams_no_change;
-    
-    component ssd is
-      port (
-        clk    : in  std_logic;
-        digits : in  std_logic_vector(31 downto 0);   
-        an     : out std_logic_vector(7  downto 0);
-        cat    : out std_logic_vector(6  downto 0)
-      );
-    end component ssd;
-    
-    signal mpg_out: std_logic_vector(4 downto 0);
-    
-    signal count: std_logic_vector(15 downto 0);
-    
-    signal count_up: std_logic:='0';
-    signal count_down: std_logic:='0';
-    
-    signal write_enable: std_logic:='0';
-    
-    signal reset: std_logic:='0';
-    
-    signal ssd_digits: std_logic_vector(31 downto 0):= (others => '0');
-    
-    
---    -- ROM
---    type t_rom is array (0 to 255) of std_logic_vector(15 downto 0);
---    signal s_rom_in : t_rom := (
---      x"0000",  -- 0
---      x"1234",  -- 1
---      x"abcd",  -- 2
---      x"1337",  -- 3
---      others => (others => '1') -- always have others
---    );
---    signal rom_data_out: std_logic_vector(15 downto 0); 
---    --- ROM DATA
-   
---   signal s_rd1: std_logic_vector(31 downto 0);
---   signal s_rd2: std_logic_vector(31 downto 0);
-   
-   signal ram_data_out: std_logic_vector(31 downto 0);
-    
+    END COMPONENT MPG;
 
-    begin
-    
-        monopulse: MPG port map(clk => clk, btn => btn(4 downto 0), enable=>mpg_out);
-        
-        seven_seg: SSD port map(clk => clk,digits => ssd_digits ,cat => cat, an => an);
-        
-        ssd_digits <= ram_data_out(29 downto 0) & "00";
-        
-        ram_module: rams_no_change port map (clk => clk,
-                                            we => write_enable,
-                                            en => '1', -- always one (not needed)
-                                            addr => count (3 downto 0),
-                                            di => ssd_digits,
-                                            do => ram_data_out);
-    
-    
-        write_enable <= mpg_out(2);
---        register_file: reg_file port map(clk=>clk,
---                                        ra1 => count(3 downto 0),
---                                        ra2 => count(3 downto 0),
---                                        wa => count(3 downto 0),
---                                        wd => ssd_digits,
---                                        wen => write_enable,
---                                        rd1 => s_rd1,
---                                        rd2 => s_rd2);
-                                       
-                
-        count_up <= mpg_out(1);  
-        count_down <= mpg_out(4);
-        reset <= mpg_out(0);
-        
-        process(clk) -- up down reset counter
-        begin
-            if rising_edge(clk) then
-                if count_up = '1' then
-                    count <= count + 1;
-                end if;
-                if count_down = '1' then
-                    count <= count - 1;
-                end if;
-                if reset = '1' then
-                    count <= (others => '0');
-                end if;
-            end if;
-        end process;      
-       
-        led <= x"000" & count(3 downto 0); -- zero ext
-        
-end Behavioral;
+    COMPONENT ssd IS
+        PORT
+        (
+            clk : IN STD_LOGIC;
+            digits : IN STD_LOGIC_VECTOR(31 DOWNTO 0);
+            an : OUT STD_LOGIC_VECTOR(7 DOWNTO 0);
+            cat : OUT STD_LOGIC_VECTOR(6 DOWNTO 0)
+        );
+    END COMPONENT ssd;
+
+    COMPONENT inst_fetch
+        PORT
+        (
+            clk : IN STD_LOGIC;
+            branch_target_address : IN STD_LOGIC_VECTOR(15 DOWNTO 0);
+            jump_address : IN STD_LOGIC_VECTOR(15 DOWNTO 0);
+            jump : IN STD_LOGIC;
+            pc_src : IN STD_LOGIC;
+            pc_en : IN STD_LOGIC;
+            pc_reset : IN STD_LOGIC;
+            instruction : OUT STD_LOGIC_VECTOR(15 DOWNTO 0);
+            pc_plus_one : OUT STD_LOGIC_VECTOR(15 DOWNTO 0)
+        );
+    END COMPONENT;
+
+    COMPONENT control_unit
+        PORT
+        (
+            op_code : IN STD_LOGIC_VECTOR(2 DOWNTO 0);
+            reg_dst : OUT STD_LOGIC;
+            ext_op : OUT STD_LOGIC;
+            alu_src : OUT STD_LOGIC;
+            branch : OUT STD_LOGIC;
+            jump : OUT STD_LOGIC;
+            alu_op : OUT STD_LOGIC_VECTOR(2 DOWNTO 0);
+            mem_write : OUT STD_LOGIC;
+            mem_to_reg : OUT STD_LOGIC;
+            reg_write : OUT STD_LOGIC
+        );
+    END COMPONENT;
+
+    COMPONENT instr_decode
+        PORT
+        (
+            clk : IN STD_LOGIC;
+            instr : IN STD_LOGIC_VECTOR(15 DOWNTO 0);
+            wd : IN STD_LOGIC_VECTOR(15 DOWNTO 0);
+            ext_op : IN STD_LOGIC;
+            reg_dst : IN STD_LOGIC;
+            reg_write : IN STD_LOGIC;
+            ext_imm : OUT STD_LOGIC_VECTOR(15 DOWNTO 0);
+            func : OUT STD_LOGIC_VECTOR(2 DOWNTO 0);
+            rd1 : OUT STD_LOGIC_VECTOR(15 DOWNTO 0);
+            rd2 : OUT STD_LOGIC_VECTOR(15 DOWNTO 0);
+            sa : OUT STD_LOGIC
+        );
+    END COMPONENT;
+    -- IF signals
+    SIGNAL s_if_out_instruction : STD_LOGIC_VECTOR(15 DOWNTO 0);
+    SIGNAL s_if_out_pc_plus_one : STD_LOGIC_VECTOR(15 DOWNTO 0);
+    -- ID signals  
+
+    -- ID related signals
+    SIGNAL s_id_in_wd : STD_LOGIC_VECTOR(15 DOWNTO 0);
+    SIGNAL s_id_in_reg_write : STD_LOGIC;
+    SIGNAL s_id_out_ext_imm : STD_LOGIC_VECTOR(15 DOWNTO 0);
+    SIGNAL s_id_out_func : STD_LOGIC_VECTOR(2 DOWNTO 0);
+    SIGNAL s_id_out_rd1 : STD_LOGIC_VECTOR(15 DOWNTO 0);
+    SIGNAL s_id_out_rd2 : STD_LOGIC_VECTOR(15 DOWNTO 0);
+    SIGNAL s_id_out_sa : STD_LOGIC;
+    -- end ID
+
+    -- Control Signals
+    SIGNAL s_ctrl_reg_dst : STD_LOGIC;
+    SIGNAL s_ctrl_ext_op : STD_LOGIC;
+    SIGNAL s_ctrl_alu_src : STD_LOGIC;
+    SIGNAL s_ctrl_branch : STD_LOGIC;
+    SIGNAL s_ctrl_jump : STD_LOGIC;
+    SIGNAL s_ctrl_alu_op : STD_LOGIC_VECTOR(2 DOWNTO 0);
+    SIGNAL s_ctrl_mem_write : STD_LOGIC;
+    SIGNAL s_ctrl_mem_to_reg : STD_LOGIC;
+    SIGNAL s_ctrl_reg_write : STD_LOGIC;
+    -- end control
+
+    --adder output
+    SIGNAL s_add_out : STD_LOGIC_VECTOR(15 DOWNTO 0);
+
+    -- io board
+    SIGNAL s_mpg_out : STD_LOGIC_VECTOR(4 DOWNTO 0);
+    SIGNAL s_digits : STD_LOGIC_VECTOR(31 DOWNTO 0) := (OTHERS => '0');
+
+    SIGNAL s_digits_upper : STD_LOGIC_VECTOR(15 DOWNTO 0);
+
+    SIGNAL s_digits_lower : STD_LOGIC_VECTOR (15 DOWNTO 0);
+
+BEGIN
+
+    monopulse : MPG PORT MAP
+        (clk => clk, btn => btn(4 DOWNTO 0), enable => s_mpg_out);
+    seven_seg : SSD PORT
+    MAP(clk => clk, digits => s_digits, cat => cat, an => an);
+    inst_infe : inst_fetch
+    PORT
+    MAP (
+    clk => clk,
+    branch_target_address => x"0002",
+    jump_address => x"0000",
+    jump => sw(0),
+    pc_src => sw(1),
+    pc_en => s_mpg_out(0),
+    pc_reset => s_mpg_out(1),
+    instruction => s_if_out_instruction,
+    pc_plus_one => s_if_out_pc_plus_one
+    );
+
+    inst_cu : control_unit
+    PORT
+    MAP (
+        op_code => s_if_out_instruction(15 DOWNTO 13),
+        reg_dst => s_ctrl_reg_dst,
+        ext_op => s_ctrl_ext_op,
+        alu_src => s_ctrl_alu_src,
+        branch => s_ctrl_branch,
+        jump => s_ctrl_jump,
+        alu_op => s_ctrl_alu_op,
+        mem_write => s_ctrl_mem_write,
+        mem_to_reg => s_ctrl_mem_to_reg,
+        reg_write => s_ctrl_reg_write
+    );
+
+    inst_indcd : instr_decode
+    PORT
+    MAP (
+        clk => clk,
+        instr => s_if_out_instruction,
+        wd => s_id_in_wd,
+        ext_op => s_ctrl_ext_op,
+        reg_dst => s_ctrl_reg_dst,
+        reg_write => s_id_in_reg_write,
+        ext_imm => s_id_out_ext_imm,
+        func => s_id_out_func,
+        rd1 => s_id_out_rd1,
+        rd2 => s_id_out_rd2,
+        sa => s_id_out_sa
+    );
+
+    -- adder
+    s_id_in_wd <= s_id_out_rd1 + s_id_out_rd2;
+
+    -- MUX for 7-segment display left side (31 downto 16)
+    PROCESS (sw(11 DOWNTO 9), s_if_out_pc_plus_one, s_if_out_instruction, s_id_out_rd1, s_id_out_rd2, s_id_in_wd)
+    BEGIN
+        CASE sw(11 DOWNTO 9) IS
+            WHEN "000" => s_digits_upper <= s_if_out_instruction;
+            WHEN "001" => s_digits_upper <= s_if_out_pc_plus_one;
+            WHEN "010" => s_digits_upper <= s_id_out_rd1;
+            WHEN "011" => s_digits_upper <= s_id_out_rd2;
+            WHEN "100" => s_digits_upper <= s_id_in_wd;
+            WHEN OTHERS => s_digits_upper <= s_if_out_instruction;
+        END CASE;
+    END PROCESS;
+
+    -- MUX for 7-segment display right side (15 downto 0)
+    PROCESS (sw(6 DOWNTO 4), s_if_out_pc_plus_one, s_if_out_instruction, s_id_out_rd1, s_id_out_rd2, s_id_in_wd)
+    BEGIN
+        CASE sw(6 DOWNTO 4) IS
+            WHEN "000" => s_digits_lower <= s_if_out_instruction;
+            WHEN "001" => s_digits_lower <= s_if_out_pc_plus_one;
+            WHEN "010" => s_digits_lower <= s_id_out_rd1;
+            WHEN "011" => s_digits_lower <= s_id_out_rd2;
+            WHEN "100" => s_digits_lower <= s_id_in_wd;
+            WHEN OTHERS => s_digits_lower <= s_if_out_instruction;
+        END CASE;
+    END PROCESS;
+
+    s_digits <= s_digits_upper & s_digits_lower;
+
+    -- LED with signals from Main Control Unit
+    led <= s_ctrl_alu_op & -- ALU operation        15:13
+        b"0000_0" & -- Unused               12:8
+        s_ctrl_reg_dst & -- Register destination 7
+        s_ctrl_ext_op & -- Extend operation     6
+        s_ctrl_alu_src & -- ALU source           5
+        s_ctrl_branch & -- Branch               4
+        s_ctrl_jump & -- Jump                 3
+        s_ctrl_mem_write & -- Memory write         2
+        s_ctrl_mem_to_reg & -- Memory to register   1
+        s_ctrl_reg_write; -- Register write       0
+END Behavioral;
