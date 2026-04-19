@@ -63,7 +63,7 @@ beq $s, $t, offset
 
 BNE        101______sss______ttt___________iiiiiii
 if $s != $t advance_pc(offset) else advance_pc(1)
-beq $s, $t, offset
+bne $s, $t, offset
 
 ORI        110______sss______ttt___________iiiiiii
 $t <= $s | imm
