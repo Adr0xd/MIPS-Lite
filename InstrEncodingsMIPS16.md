@@ -62,7 +62,7 @@ if $s == $t advance_pc(offset) else advance_pc(1)
 beq $s, $t, offset
 
 SLTI        101______sss______ttt___________iiiiiii
-if $s <= imm $t <= 1 else $t<=0
+if $s < imm $t <= 1 else $t<=0
 bne $s, $t, offset
 
 ORI        110______sss______ttt___________iiiiiii
