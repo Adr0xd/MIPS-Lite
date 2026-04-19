@@ -1,53 +1,143 @@
-library ieee;
-  use ieee.std_logic_1164.all;
-  use ieee.std_logic_arith.all;
-  use ieee.std_logic_unsigned.all;
+LIBRARY ieee;
+USE ieee.std_logic_1164.ALL;
+USE ieee.std_logic_arith.ALL;
+USE ieee.std_logic_unsigned.ALL;
 
-entity control_unit is
-  port (
+ENTITY control_unit IS
+  PORT (
     -- inputs
-    op_code : in std_logic_vector(2 downto 0);
+    op_code : IN STD_LOGIC_VECTOR(2 DOWNTO 0);
     -- outputs
-    reg_dst    : out std_logic;
-    ext_op     : out std_logic;
-    alu_src    : out std_logic;
-    branch     : out std_logic;
-    jump       : out std_logic;
-    alu_op     : out std_logic_vector(2 downto 0);
-    mem_write  : out std_logic;
-    mem_to_reg : out std_logic;
-    reg_write  : out std_logic 
+    reg_dst : OUT STD_LOGIC;
+    ext_op : OUT STD_LOGIC;
+    alu_src : OUT STD_LOGIC;
+    branch : OUT STD_LOGIC;
+    jump : OUT STD_LOGIC;
+    alu_op : OUT STD_LOGIC_VECTOR(2 DOWNTO 0);
+    mem_write : OUT STD_LOGIC;
+    mem_to_reg : OUT STD_LOGIC;
+    reg_write : OUT STD_LOGIC
   );
-end control_unit;
+END control_unit;
 
-architecture behavioral of control_unit is
+ARCHITECTURE behavioral OF control_unit IS
 
-begin
+  -- R type
+  --  15    13 12     10 9      7 6      4  3  2         0
+  -- -----------------------------------------------------	
+  -- | opcode |   rs   |   rt   |   rd   | sa | function |
+  -- -----------------------------------------------------
 
-    process(op_code)
-    begin
-      case op_code is   
-        when "000" => -- R type instruction
-          reg_dst    <= '1';    -- for R type instruction reg destis 1 otw 0
-          ext_op     <= '0';    -- zero extension on R type instructions
-          alu_src    <= '0';    --
-          branch     <= '0';
-          jump       <= '0';
-          alu_op     <= "000";
-          mem_write  <= '0';
-          mem_to_reg <= '0';
-          reg_write  <= '1';
-        when others =>
-          reg_dst    <= '0';
-          ext_op     <= '0';
-          alu_src    <= '0';
-          branch     <= '0';
-          jump       <= '0';
-          alu_op     <= "000";
-          mem_write  <= '0';
-          mem_to_reg <= '0';
-          reg_write  <= '0';
-      end case;
-    end process;  
+  -- I type
 
-end behavioral;
+  -- 15     13 12    10 9      7 6                       0
+  -- ------------------------------------------------------
+  -- | opcode |   rs   |   rt   |    addr/immediate       |
+  -- ------------------------------------------------------
+
+  -- J Type
+
+  --  15    13 12                                         0
+  -- ------------------------------------------------------
+  -- | opcode |              target address               |
+  -- ------------------------------------------------------
+
+BEGIN
+
+  PROCESS (op_code)
+  BEGIN
+    CASE op_code IS
+      WHEN "000" => -- R type instruction
+        reg_dst <= '1'; -- for R type instruction reg dest is 1 otw 0
+        ext_op <= '0'; -- zero extension on R type instructions
+        alu_src <= '0';
+        branch <= '0';
+        jump <= '0';
+        alu_op <= "000";
+        mem_write <= '0';
+        mem_to_reg <= '0';
+        reg_write <= '1';
+      WHEN "001" => --> ADD immediate - ADDI
+        reg_dst <= '0';
+        ext_op <= '1'; -- sign extend on arithmethic ops
+        alu_src <= '1';
+        branch <= '0';
+        jump <= '0';
+        alu_op <= "001"; -- i think
+        mem_write <= '0';
+        mem_to_reg <= '0';
+        reg_write <= '1';
+      WHEN "010" => --> LW
+        reg_dst <= '0';
+        ext_op <= '1'; -- sign extend on arithmethic ops
+        alu_src <= '1';
+        branch <= '0';
+        jump <= '0';
+        alu_op <= "001"; -- add
+        mem_write <= '0';
+        mem_to_reg <= '1';
+        reg_write <= '1';
+      WHEN "011" => --> SW
+        reg_dst <= '0';
+        ext_op <= '1'; -- sign extend on arithmethic ops
+        alu_src <= '1';
+        branch <= '0';
+        jump <= '0';
+        alu_op <= "001"; -- add
+        mem_write <= '1';
+        mem_to_reg <= '0'; -- dont care
+        reg_write <= '0';
+      WHEN "100" => -- BEQ
+        reg_dst <= '0';
+        ext_op <= '0'; -- zero extend address to branch
+        alu_src <= '0'; -- perf s-t and check zf
+        branch <= '1';
+        jump <= '0';
+        alu_op <= "010"; -- sub
+        mem_write <= '0';
+        mem_to_reg <= '0'; -- dont care
+        reg_write <= '0';
+      WHEN "101" => -- SLTI
+        reg_dst <= '0';
+        ext_op <= '1'; -- sign extend on arith op
+        alu_src <= '1';
+        branch <= '0';
+        jump <= '0';
+        alu_op <= "011"; -- SLTI
+        mem_write <= '0';
+        mem_to_reg <= '0'; -- dont care
+        reg_write <= '1';
+      WHEN "110" => -- ORI
+        reg_dst <= '0';
+        ext_op <= '0'; -- zero extend on logical op
+        alu_src <= '1'; -- perf $s-$t and check zf
+        branch <= '0';
+        jump <= '0';
+        alu_op <= "011"; -- OR
+        mem_write <= '0';
+        mem_to_reg <= '0';
+        reg_write <= '1';
+      WHEN "111" => -- JUMP
+        reg_dst <= '0';
+        ext_op <= '0'; 
+        alu_src <= '0';
+        branch <= '0';
+        jump <= '1';
+        alu_op <= "000"; 
+        mem_write <= '0';
+        mem_to_reg <= '0'; 
+        reg_write <= '0';
+      WHEN OTHERS =>
+        reg_dst <= '0';
+        ext_op <= '0';
+        alu_src <= '0';
+        branch <= '0';
+        jump <= '0';
+        alu_op <= "000";
+        mem_write <= '0';
+        mem_to_reg <= '0';
+        reg_write <= '0';
+    END CASE;
+  END PROCESS;
+
+END behavioral;
