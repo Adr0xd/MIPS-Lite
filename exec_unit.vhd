@@ -53,7 +53,7 @@ BEGIN
       WHEN "010" => s_alu_control <= "000"; -- LW -- its an add between $s and offset
       WHEN "011" => s_alu_control <= "000"; -- SW -- same
       WHEN "100" => s_alu_control <= "001"; -- BEQ -- subtract $s-$t
-      WHEN "101" => s_alu_control <= "101"; -- SLTI 
+      WHEN "101" => s_alu_control <= "110"; -- SLTI 
       WHEN "110" => s_alu_control <= "101"; -- ORI
       WHEN OTHERS => s_alu_control <= "000";
     END CASE;
