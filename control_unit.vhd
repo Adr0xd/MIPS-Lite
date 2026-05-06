@@ -85,7 +85,7 @@ BEGIN
         jump <= '0';
         alu_op <= "011"; -- sw alu op will go to add in eu
         mem_write <= '1';
-        mem_to_reg <= '0'; -- dont care
+        mem_to_reg <= '0';
         reg_write <= '0';
       WHEN "100" => -- BEQ
         reg_dst <= '0';
